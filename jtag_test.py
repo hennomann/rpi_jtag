@@ -7,6 +7,7 @@ enable_gpios()
 
 '''
 # Read IDCODE using GPIOs (bit banging)
+TLR_RTI()
 prep_shift_dr() # Reset test logic and prepare shifting out data
 r = gpio_read(32)
 r.reverse()
@@ -17,6 +18,7 @@ print("IDCODE read from device using GPIO bit banging:\n0x{:08x}".format(int(bin
 '''
 
 # Read IDCODE using hardware SPI interface
+TLR_RTI()
 prep_shift_dr() # Reset test logic and prepare shifting out data
 disable_gpios()
 r = spi_read(4)

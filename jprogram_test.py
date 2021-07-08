@@ -23,8 +23,8 @@ prep_shift_ir()
 print("Loading instruction JPROGRAM")
 load_instr("JPROGRAM")
 TLR_RTI()
-sleep(1) # Necessary wait time in this RTI according to manual (min 10ms)
-#prep_shift_ir()
+sleep(0.020) # Necessary wait time in this RTI according to manual (min 10ms)
+prep_shift_ir()
 print("Loading instruction CFG_IN")
 load_instr("CFG_IN")
 TMS1()
@@ -36,7 +36,7 @@ disable_gpios() # Prepare using the hardware SPI interface
 
 # Open bitfile and read bytes in binary mode:
 print("Parsing bitfile")
-with open('trixor_bitfile.bit','rb') as f:
+with open('trixor_bitfile2.bit','rb') as f:
     data_raw = f.read()
 f.close()
 data = list(data_raw)
@@ -81,15 +81,26 @@ disable_gpios()
 print("Clocking in start sequence")
 spi_read(256)
 
+# Read USERCODE register
 enable_gpios()
+TLR_RTI()
+prep_shift_ir()
+print("Loading instruction USERCODE")
+load_instr("USERCODE")
+TMS1()
+TMS0()
+prep_shift_dr()
 
-TLR()
+disable_gpios() # Prepare using the hardware SPI interface
+
+r = spi_read(4)
+binstr = ""
+for byte in r:
+    binstr += "{:08b}".format(byte)
+binstr = binstr[::-1]
+print("USERCODE read from device using SPI interface:\n0x{:08x}".format(int(binstr,2)))
 
 disable_gpios()
 
 print("Done!")
 
-#print("0x",end='')
-#for byte in r:
-#    print("{:02x}".format(byte),end='')
-#print()

@@ -8,13 +8,14 @@ import spidev
 # GPIO pin mapping to JTAG interface
 TCK = 5
 TMS = 6
-TDI = 26
+TDI = 13#26
 TDO = 19
 
 # JTAG instructions dictionary (needed LSB first -> reversed)
 INSTR = { "JPROGRAM" : "001011"[::-1],
           "CFG_IN" : "000101"[::-1],
           "JSTART" : "001100"[::-1],
+          "USERCODE" : "001000"[::-1],
          }
 
 # Setup GPIO pins
@@ -143,7 +144,19 @@ def load_instr(instr_str):
     GPIO.output(TMS,1)
     GPIO.output(TDI,int(msg[5]))
     GPIO.output(TCK,1)
-    
+    GPIO.output(TCK,0)
+
+def load_instr_usercode():
+    GPIO.output(TMS,0)
+    msg = [0,0,0,1,0,0]
+    for i in range(5):
+        GPIO.output(TDI,msg[i])
+        GPIO.output(TCK,1)
+        GPIO.output(TCK,0)
+    GPIO.output(TMS,1)
+    GPIO.output(TDI,msg[5])
+    GPIO.output(TCK,1)
+    GPIO.output(TCK,0)
 
 ##################################
 # Hardware SPI interface functions
@@ -154,7 +167,7 @@ def spi_open():
     try:
         spi_device = spidev.SpiDev()
         spi_device.open(0,0)
-        spi_device.max_speed_hz = 1000000
+        spi_device.max_speed_hz = 10000000
         spi_device.mode = 0
     except Exception as e:
         print("Failed to open SPI connection")

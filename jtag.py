@@ -11,10 +11,11 @@ TMS = 6
 TDI = 26
 TDO = 19
 
-# Define JTAG instructions (needed LSB first -> reversed)
-JPROGRAM = "001011"[::-1]
-CFG_IN = "000101"[::-1]
-JSTART = "001100"[::-1]
+# JTAG instructions dictionary (needed LSB first -> reversed)
+INSTR = { "JPROGRAM" : "001011"[::-1],
+          "CFG_IN" : "000101"[::-1],
+          "JSTART" : "001100"[::-1],
+         }
 
 # Setup GPIO pins
 GPIO.setwarnings(False)
@@ -55,7 +56,7 @@ def TMS0():
     GPIO.output(TCK,0)
     GPIO.output(TMS,1)
 
-# Send TMS '1'
+# Send TMS 1
 def TMS1():
     GPIO.output(TMS,1)
     GPIO.output(TCK,1)
@@ -79,6 +80,22 @@ def TLR_RTI():
     GPIO.output(TCK,0)
     GPIO.output(TMS,1)
 
+# Send 1 byte using GPIO bitbanging
+# For bits[7:1] TMS = 0, for bit[0] TMS = 1 (last bit)
+def gpio_send_last_byte(byte):
+    GPIO.output(TMS,0)
+    for i in range(1,8)[::-1]: # bits[7:1]
+        bit = (byte & (0b00000001 << i)) >> i
+        GPIO.output(TDI,bit)
+        GPIO.output(TCK,1)
+        GPIO.output(TCK,0)
+    # Last bit (TMS = 1)
+    GPIO.output(TMS,1)
+    GPIO.output(TDI, byte & 0b00000001)
+    GPIO.output(TCK,1)
+    GPIO.output(TCK,0)
+    GPIO.output(TDI,1)
+    
 # Read n bits from TDO using GPIO bit banging (shifts in n clk cycles)
 def gpio_read(n):
     GPIO.output(TMS,0)
@@ -115,20 +132,18 @@ def prep_shift_ir():
 # Load instructions
 ####################
     
-# Load IDCODE instruction
-def load_instr(instr):
+# Load instruction
+def load_instr(instr_str):
     GPIO.output(TMS,0)
-    msg = [0,0,1,0,0,1]
-    msg.reverse()
+    msg = INSTR[instr_str]
     for i in range(5):
-        GPIO.output(TCK,0)
-        GPIO.output(TDI,msg[i])
+        GPIO.output(TDI,int(msg[i]))
         GPIO.output(TCK,1)
-    GPIO.output(TCK,0)
+        GPIO.output(TCK,0)
     GPIO.output(TMS,1)
-    GPIO.output(TDI,msg[5])
+    GPIO.output(TDI,int(msg[5]))
     GPIO.output(TCK,1)
-    GPIO.output(TMS,0)
+    
 
 ##################################
 # Hardware SPI interface functions
@@ -139,7 +154,7 @@ def spi_open():
     try:
         spi_device = spidev.SpiDev()
         spi_device.open(0,0)
-        spi_device.max_speed_hz = 10000000
+        spi_device.max_speed_hz = 1000000
         spi_device.mode = 0
     except Exception as e:
         print("Failed to open SPI connection")
@@ -149,6 +164,12 @@ def spi_open():
 
 # Open SPI device
 device = spi_open()
+
+# Send list of bytes via SPI
+def spi_send(data):
+    if gpio_mode == 1:
+        raise NameError("GPIO mode needs to be disabled to use SPI interface, exiting...")
+    device.xfer2(data)
 
 # Read n bytes
 def spi_read(n):

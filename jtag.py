@@ -5,27 +5,28 @@ from time import sleep
 import RPi.GPIO as GPIO
 import spidev
 
-# GPIO pin mapping to JTAG interface
-TCK = 5
-TMS = 6
-TDI = 13#26
-TDO = 19
+##############
+# GPIO setup
+##############
 
-# JTAG instructions dictionary (needed LSB first -> reversed)
-INSTR = { "JPROGRAM" : "001011"[::-1],
-          "CFG_IN" : "000101"[::-1],
-          "JSTART" : "001100"[::-1],
-          "USERCODE" : "001000"[::-1],
-         }
+# GPIO pin mapping to JTAG / SPI interface
+#        SPI PIN (connected via ~470R resistor so that GPIO state overrules SPI pin state)
+TCK = 5  # SCLK
+TMS = 6  # CS
+TDI = 13 # MOSI - was 26, but realized that on KILOM1 schematic GPIO26 and GPIO13 are swapped
+TDO = 19 # MISO
 
-# Setup GPIO pins
+# Setup GPIO pins (default: enabled, overruling SPI pins)
 GPIO.setwarnings(False)
 GPIO.setmode(GPIO.BCM)
-GPIO.setup(TCK, GPIO.IN)  # TCK
-GPIO.setup(TMS, GPIO.IN)  # TMS 
-GPIO.setup(TDI, GPIO.IN) # TDI
-GPIO.setup(TDO, GPIO.IN) # TDO
-gpio_mode = 0
+GPIO.setup(TCK, GPIO.OUT)
+GPIO.setup(TMS, GPIO.OUT)
+GPIO.setup(TDI, GPIO.OUT)
+GPIO.setup(TDO, GPIO.IN)
+GPIO.output(TCK,0)
+GPIO.output(TMS,1)
+GPIO.output(TDI,1)
+gpio_mode = 1
 
 # Enable GPIO pins
 def enable_gpios():
@@ -44,7 +45,8 @@ def disable_gpios():
     GPIO.setup(TMS, GPIO.IN)
     GPIO.setup(TDI, GPIO.IN)
     global gpio_mode
-    gpio_mode = 0
+    gpio_mode = 0    
+    
 
 ###########################
 # GPIO bitbanging functions
@@ -84,6 +86,7 @@ def TLR_RTI():
 # Send 1 byte using GPIO bitbanging
 # For bits[7:1] TMS = 0, for bit[0] TMS = 1 (last bit)
 def gpio_send_last_byte(byte):
+    enable_gpios()
     GPIO.output(TMS,0)
     for i in range(1,8)[::-1]: # bits[7:1]
         bit = (byte & (0b00000001 << i)) >> i
@@ -129,10 +132,18 @@ def prep_shift_ir():
         GPIO.output(TCK,0)
     GPIO.output(TMS,1)
 
+
 ####################
 # Load instructions
 ####################
-    
+
+# JTAG instructions dictionary (needed LSB first -> reversed)
+INSTR = { "JPROGRAM" : "001011"[::-1],
+          "CFG_IN"   : "000101"[::-1],
+          "JSTART"   : "001100"[::-1],
+          "USERCODE" : "001000"[::-1],
+         }
+
 # Load instruction
 def load_instr(instr_str):
     GPIO.output(TMS,0)
@@ -146,18 +157,12 @@ def load_instr(instr_str):
     GPIO.output(TCK,1)
     GPIO.output(TCK,0)
 
-def load_instr_usercode():
-    GPIO.output(TMS,0)
-    msg = [0,0,0,1,0,0]
-    for i in range(5):
-        GPIO.output(TDI,msg[i])
-        GPIO.output(TCK,1)
-        GPIO.output(TCK,0)
-    GPIO.output(TMS,1)
-    GPIO.output(TDI,msg[5])
-    GPIO.output(TCK,1)
-    GPIO.output(TCK,0)
+# Update DR/IR and move to RTI state
+def update_RTI():
+    TMS1()
+    TMS0()
 
+    
 ##################################
 # Hardware SPI interface functions
 ##################################

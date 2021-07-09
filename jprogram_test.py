@@ -3,8 +3,6 @@
 from time import sleep
 from jtag import *
 
-enable_gpios()
-
 # Read IDCODE using hardware SPI interface
 TLR_RTI()
 prep_shift_dr() # Reset test logic and prepare shifting out data
@@ -100,7 +98,7 @@ for byte in r:
 binstr = binstr[::-1]
 print("USERCODE read from device using SPI interface:\n0x{:08x}".format(int(binstr,2)))
 
-disable_gpios()
+enable_gpios()
 
 print("Done!")
 

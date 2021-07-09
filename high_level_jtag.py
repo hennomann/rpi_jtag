@@ -87,3 +87,55 @@ def program_device(bitfile):
     read_USERCODE()
     print("Done!")
 
+def program_device4k(bitfile):
+    read_IDCODE()
+    TLR_RTI()
+    prep_shift_ir()
+    load_instr("JPROGRAM")
+    TLR_RTI()
+    sleep(0.020) # Necessary wait time in this RTI according to manual (min 10ms)
+    prep_shift_ir()
+    load_instr("CFG_IN")
+    update_RTI()
+    prep_shift_dr()
+    disable_gpios() # Prepare using the hardware SPI interface
+    # Open bitfile and read bytes in binary mode:
+    with open(bitfile,'rb') as f:
+        data_raw = f.read()
+    f.close()
+    data = list(data_raw)
+    pagecount = int((len(data)-1) / 256)
+    bytes_last_page = (len(data)-1) % 256
+    sector4kcount = int((len(data)-1) / 4096)
+    pagesremaining = int(((len(data)-1) % 4096) / 256)
+    print("Starting to write bitstream data")
+    # Send full sectors of 4kB
+    for i in range(sector4kcount):
+        print("Writing sector {:05d}/{:05d}\r".format(i,sector4kcount-1), end="")
+        spi_send(data[i*4096:i*4096+4096])
+    print()
+    # Send remaining pages
+    start_remaining = sector4kcount*4096
+    for i in range(pagesremaining):
+        print("Writing remaing page {:05d}/{:05d}\r".format(i,pagesremaining-1), end="")
+        spi_send(data[start_remaining+i*256:start_remaining+i*256+256])
+    print()
+    # Send all but last byte of last page
+    print("Writing last page")
+    if bytes_last_page > 0:
+        spi_send(data[pagecount*256:pagecount*256+bytes_last_page])
+    enable_gpios() # Back to GPIO mode for bitbanging of last byte
+    print("Writing last byte")
+    gpio_send_last_byte(data[-1])
+    update_RTI()
+    print("Writing bitstream data finished")
+    prep_shift_ir()
+    load_instr("JSTART")
+    update_RTI()
+    disable_gpios()
+    print("Clocking in start sequence")
+    spi_read(256)
+    enable_gpios()
+    read_IDCODE()
+    read_USERCODE()
+    print("Done!")

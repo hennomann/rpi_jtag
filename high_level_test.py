@@ -9,7 +9,7 @@ import timeit
 
 start = timeit.default_timer()
 
-program_device("trixor_bitfile2.bit")
+program_device("um1_flash_connect.bit")
 
 stop = timeit.default_timer()
 

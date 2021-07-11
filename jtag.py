@@ -142,6 +142,7 @@ INSTR = { "JPROGRAM" : "001011"[::-1],
           "CFG_IN"   : "000101"[::-1],
           "JSTART"   : "001100"[::-1],
           "USERCODE" : "001000"[::-1],
+          "USER1"    : "000010"[::-1],
          }
 
 # Load instruction
@@ -197,3 +198,12 @@ def spi_read(n):
     r = device.xfer2(msg)
     return r
 
+##################################
+# SPI flash functions (USERMODE1)
+##################################
+
+# Read flash ID register
+def read_id():
+    msg = [0x9f,0x00,0x00,0x00,0x00,0x00]
+    r = device.xfer2(msg)
+    return r

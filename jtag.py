@@ -248,7 +248,7 @@ def flash_write(cmd):
 
 # Flash 1 byte write operation (commands without payload)
 def flash_page_program(addr,data):
-    write_enable()
+    flash_write_enable()
     msg = [0x02]
     msg += [((addr & 0xff000000) >> 24)]
     msg += [((addr & 0xff0000) >> 16)]
@@ -273,7 +273,7 @@ def flash_read_page(addr):
 
 # Flash 1 byte write operation (commands without payload)
 def flash_page_program3B(addr,data):
-    write_enable()
+    flash_write_enable()
     msg = [0x02]
     msg += [((addr & 0xff0000) >> 16)]
     msg += [((addr & 0xff00) >> 8)]
@@ -289,7 +289,7 @@ def flash_read_page3B(addr):
     msg += [((addr & 0xff0000) >> 16)]
     msg += [((addr & 0xff00) >> 8)]
     msg += [(addr & 0xff)]
-    for i in range(256):
+    for i in range(257):
         msg += [0x00]
     r = device.xfer3(msg)
-    return r[4:]
+    return r[5:]

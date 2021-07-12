@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import sys
+import math
 from time import sleep
 import jtag
 
@@ -196,35 +197,40 @@ def flash_erase():
             i=i+1
             cnt=(cnt+1)%4
 
-def flash_program(bitfile):
-    # Open bitfile and read bytes in binary mode:
-    with open(bitfile,'rb') as f:
-        data_raw=f.read()
-    f.close()
-
-    # Convert binary object to list an discard unneccessary header data
-    start_byte = 113
-    data = list(data_raw[start_byte:])
-
+def flash_program(data):    
     # Pad data to have a full last page
     pagecount = int(math.ceil(float(len(data))/256.))
     n_pad = pagecount * 256 - len(data)
     data += [0xff]*n_pad
-
     # Program flash page by page
     print("Start programming flash:")
     for i in range(pagecount):
         addr = i*256
         print("Writing page {:05d}/{:05d}\r".format(i,pagecount-1), end="")
-        flash.page_program3B(device, addr, data[addr:addr+256])
+        jtag.flash_page_program3B(addr, data[addr:addr+256])
         sleep(0.001)
     print()
     print("Programming flash finished")
 
-
-
-
-
+def flash_verify(data):
+    pagecount = int(math.ceil(float(len(data))/256.))
+    n_pad = pagecount * 256 - len(data)
+    data += [0xff]*n_pad
+    for i in range(pagecount):
+        addr = i*256
+        print("Reading page {:05d}/{:05d}\r".format(i,pagecount-1), end="")
+        r=jtag.flash_read_page3B(addr)
+        if list(r) != data[addr:addr+256]:
+            print()
+            print()
+            print("Found bad flash content on page {:d}".format(i))
+            print("Content of flash page:")
+            print(list(r))
+            print("Content of input bitstream page:")
+            print(data[addr:addr+256])
+            print()
+            sys.exit("Verification failed! Exiting...")
+    print()
 
 
 

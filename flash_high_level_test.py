@@ -10,17 +10,15 @@ flash_check_id()
 flash_erase()
 
 # Open bitfile and read bytes in binary mode:
-with open(bitfile,'rb') as f:
+with open('um1_flash_connect_tdo_bit_shift.bit','rb') as f:
     data_raw=f.read()
 f.close()
 # Convert binary object to list an discard unneccessary header data
 start_byte = 113
 data = list(data_raw[start_byte:])
-# Pad data to have a full last page
-pagecount = int(math.ceil(float(len(data))/256.))
-n_pad = pagecount * 256 - len(data)
-data += [0xff]*n_pad
 
-print()
+flash_program(data)
+
+flash_verify(data)
 
 print("Done!")

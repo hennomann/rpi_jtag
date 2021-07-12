@@ -202,8 +202,94 @@ def spi_read(n):
 # SPI flash functions (USERMODE1)
 ##################################
 
+# Enter 4-byte address mode
+def flash_enter_4b_am():
+    msg = [0xb7]
+    device.xfer2(msg)
+
+# Exit 4-byte address mode
+def flash_exit_4b_am():
+    msg = [0xe9]
+    device.xfer2(msg)
+
+# Read flash status register
+def flash_status():
+    msg = [0x05,0x00,0x00]
+    r = device.xfer2(msg)
+    return r[2]
+
+def flash_flag_status():
+    msg = [0x70,0x00,0x00]
+    r = device.xfer2(msg)
+    #print(hex(r[1]))
+    return r[2:]
+
 # Read flash ID register
-def read_id():
+def flash_read_id():
     msg = [0x9f,0x00,0x00,0x00,0x00,0x00]
     r = device.xfer2(msg)
-    return r
+    return r[2:-1]
+
+# Flash write enable command
+def flash_write_enable():
+    msg = [0x06]
+    device.xfer2(msg)
+
+# Flash erase command
+def flash_erase():
+    msg = [0x60]
+    device.xfer2(msg)
+
+# Flash 1 byte write operation (commands without payload)
+def flash_write(cmd):
+    msg = [0x00]
+    msg[0] = cmd
+    device.xfer2(msg)
+
+# Flash 1 byte write operation (commands without payload)
+def flash_page_program(addr,data):
+    write_enable()
+    msg = [0x02]
+    msg += [((addr & 0xff000000) >> 24)]
+    msg += [((addr & 0xff0000) >> 16)]
+    msg += [((addr & 0xff00) >> 8)]
+    msg += [(addr & 0xff)]
+    for byte in data:
+        msg += [byte]
+    device.xfer2(msg)
+    sleep(0.001)    
+
+# Read back 1 page (256 bytes) from flash memory
+def flash_read_page(addr):
+    msg = [0x03]
+    msg += [((addr & 0xff000000) >> 24)]
+    msg += [((addr & 0xff0000) >> 16)]
+    msg += [((addr & 0xff00) >> 8)]
+    msg += [(addr & 0xff)]
+    for i in range(256):
+        msg += [0x00]
+    r = device.xfer3(msg)
+    return r[5:]
+
+# Flash 1 byte write operation (commands without payload)
+def flash_page_program3B(addr,data):
+    write_enable()
+    msg = [0x02]
+    msg += [((addr & 0xff0000) >> 16)]
+    msg += [((addr & 0xff00) >> 8)]
+    msg += [(addr & 0xff)]
+    for byte in data:
+        msg += [byte]
+    device.xfer2(msg)
+    sleep(0.001)
+
+# Read back 1 page (256 bytes) from flash memory
+def flash_read_page3B(addr):
+    msg = [0x03]
+    msg += [((addr & 0xff0000) >> 16)]
+    msg += [((addr & 0xff00) >> 8)]
+    msg += [(addr & 0xff)]
+    for i in range(256):
+        msg += [0x00]
+    r = device.xfer3(msg)
+    return r[4:]

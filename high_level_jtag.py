@@ -79,11 +79,11 @@ def program_device(bitfile):
         jtag.spi_send(data[i*256:i*256+256])
     print()
     # Send all but last byte of last page
-    print("Writing last page")
+    #print("Writing last page")
     if bytes_last_page > 0:
         jtag.spi_send(data[pagecount*256:pagecount*256+bytes_last_page])
     jtag.enable_gpios() # Back to GPIO mode for bitbanging of last byte
-    print("Writing last byte")
+    #print("Writing last byte")
     jtag.gpio_send_last_byte(data[-1])
     jtag.update_RTI()
     print("Writing bitstream data finished")
@@ -96,7 +96,6 @@ def program_device(bitfile):
     jtag.enable_gpios()
     read_IDCODE()
     read_USERCODE()
-    print("Done!")
 
 def program_device4k(bitfile):
     read_IDCODE()
@@ -231,7 +230,7 @@ def flash_verify(data):
             print()
             sys.exit("Verification failed! Exiting...")
     print()
-
+    print("Flash content verified successfully!")
 
 
 

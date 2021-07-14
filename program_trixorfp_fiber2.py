@@ -3,6 +3,9 @@
 import sys
 import argparse
 from high_level_jtag import *
+import timeit
+
+start = timeit.default_timer()
 
 parser = argparse.ArgumentParser()
 parser.add_argument("bitfile", help="specify path of bitfile to be loaded")
@@ -49,6 +52,10 @@ else:
         flash_verify(data)
 
 # Reset TAP controller
-TLR_RTI()
+TAP_RESET()
 
 print("Done!")
+
+stop = timeit.default_timer()
+
+print('Time: ', stop - start)

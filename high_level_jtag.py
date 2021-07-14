@@ -6,13 +6,34 @@ from time import sleep
 import jtag
 
 ####################################################
-# Read device IDCODE and design USERCODE
+# Basic functions
 ####################################################
 
 # Reset test access port
 def TAP_RESET():
     jtag.enable_gpios()
     jtag.TLR_RTI()
+
+# Reboot FPGA from configuration memory
+def REBOOT_FPGA():
+    print("Attempting to reboot FPGA")
+    jtag.TLR_RTI()
+    '''
+    jtag.prep_shift_ir()
+    jtag.load_instr("JPROGRAM")
+    jtag.TLR_RTI()
+    sleep(0.020) # Necessary wait time in this RTI according to manual (min 10ms)
+    '''
+    jtag.prep_shift_ir()
+    jtag.load_instr("JSTART")
+    jtag.update_RTI()
+    jtag.disable_gpios()
+    print("Clocking in start sequence")
+    jtag.spi_read(256)
+    jtag.enable_gpios()
+    read_USERCODE()
+    print("Done!")
+    
 
 ####################################################
 # Read device IDCODE and design USERCODE

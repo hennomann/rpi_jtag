@@ -9,7 +9,10 @@ import timeit
 
 start = timeit.default_timer()
 
-program_device("um1_flash_connect_tdo_bit_shift.bit")
+#program_device("um1_flash_connect_tdo_bit_shift.bit")
+
+#reboot?
+REBOOT_FPGA()
 
 stop = timeit.default_timer()
 

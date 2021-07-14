@@ -13,8 +13,8 @@ import spidev
 #        SPI PIN (connected via ~470R resistor so that GPIO state overrules SPI pin state)
 TCK = 5  # SCLK
 TMS = 6  # CS
-TDI = 13 # MOSI - was 26, but realized that on KILOM1 schematic GPIO26 and GPIO13 are swapped
-TDO = 19 # MISO
+TDI = 22 # MOSI - was 26, but realized that on KILOM1 schematic GPIO26 and GPIO13 are swapped
+TDO = 27 # MISO
 
 # Setup GPIO pins (default: enabled, overruling SPI pins)
 GPIO.setwarnings(False)

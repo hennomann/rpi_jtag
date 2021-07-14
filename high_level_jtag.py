@@ -28,8 +28,10 @@ def read_IDCODE():
     for byte in r:
         binstr += "{:08b}".format(byte)
     binstr = binstr[::-1]
-    print("IDCODE read from device using SPI interface:\n0x{:08x}".format(int(binstr,2)))
+    id_hex = "0x{:08x}".format(int(binstr,2))
+    print("IDCODE read from FPGA using SPI interface:\n" + id_hex)
     jtag.enable_gpios()
+    return id_hex
 
 # Read USERCODE only
 def read_USERCODE():
@@ -54,7 +56,6 @@ def read_USERCODE():
 # Program device via JTAG with bitstream in bitfile
 ####################################################
 def program_device(bitfile):
-    read_IDCODE()
     jtag.TLR_RTI()
     jtag.prep_shift_ir()
     jtag.load_instr("JPROGRAM")
@@ -72,7 +73,7 @@ def program_device(bitfile):
     data = list(data_raw)
     pagecount = int((len(data)-1) / 256)
     bytes_last_page = (len(data)-1) % 256
-    print("Starting to write bitstream data")
+    print("Starting to write bitstream data into FPGA:")
     # Send full pages of 256 bytes except for last page
     for i in range(pagecount):
         print("Writing page {:05d}/{:05d}\r".format(i,pagecount-1), end="")
@@ -91,11 +92,10 @@ def program_device(bitfile):
     jtag.load_instr("JSTART")
     jtag.update_RTI()
     jtag.disable_gpios()
-    print("Clocking in start sequence")
+    print("Restarting device")
     jtag.spi_read(256)
     jtag.enable_gpios()
-    read_IDCODE()
-    read_USERCODE()
+    #read_USERCODE()
 
 def program_device4k(bitfile):
     read_IDCODE()
@@ -146,7 +146,6 @@ def program_device4k(bitfile):
     print("Clocking in start sequence")
     jtag.spi_read(256)
     jtag.enable_gpios()
-    read_IDCODE()
     read_USERCODE()
     print("Done!")
 
@@ -175,7 +174,7 @@ def flash_check_id():
     print()
     # Check ID
     if (r[0]==0xc2 and r[1]==0x28 and r[2]==0x17):
-        print("Found correct flash device ID!")
+        print("Found correct flash device ID, continuing...")
     else:
         sys.exit("Wrong flash device ID detected, exiting...")
 
@@ -202,7 +201,7 @@ def flash_program(data):
     n_pad = pagecount * 256 - len(data)
     data += [0xff]*n_pad
     # Program flash page by page
-    print("Start programming flash:")
+    print("Starting flash loading:")
     for i in range(pagecount):
         addr = i*256
         print("Writing page {:05d}/{:05d}\r".format(i,pagecount-1), end="")
@@ -212,6 +211,7 @@ def flash_program(data):
     print("Programming flash finished")
 
 def flash_verify(data):
+    print("Starting flash content verification:")
     pagecount = int(math.ceil(float(len(data))/256.))
     n_pad = pagecount * 256 - len(data)
     data += [0xff]*n_pad

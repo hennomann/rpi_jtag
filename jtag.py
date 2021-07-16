@@ -268,7 +268,7 @@ def flash_read_page(addr):
     msg += [(addr & 0xff)]
     for i in range(256):
         msg += [0x00]
-    r = device.xfer3(msg)
+    r = device.xfer2(msg)
     return r[5:]
 
 # Flash 1 byte write operation (commands without payload)
@@ -291,5 +291,5 @@ def flash_read_page3B(addr):
     msg += [(addr & 0xff)]
     for i in range(257):
         msg += [0x00]
-    r = device.xfer3(msg)
+    r = device.xfer2(msg)
     return r[5:]
